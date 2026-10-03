@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#222f46">
+<title>Bon Cadre</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Hanken+Grotesk:wght@400;600;700&family=VT323&display=swap">
+<style>
+/* Layout: le viseur occupe tout l'écran. Conseils en haut, mesures et déclencheur en bas. */
+:root {
+  --shell: #222f46;
+  --shell-2: #2c3b57;
+  --line: #3d4e6e;
+  --ink: #f4f0e3;
+  --muted: #b0bad0;
+  --flash: #ffe45e;
+  --flash-edge: #b89f1c;
+  --flash-ink: #2a2300;
+  --stamp: #ff8a1f;
+  --ok: #8be0a4;
+  --warn: #ffd166;
+  --bad: #ff8a7a;
+  --glass: rgba(26, 36, 56, .86);
+  --f-display: 'Bowlby One', Impact, 'Arial Black', sans-serif;
+  --f-body: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-lcd: 'VT323', ui-monospace, 'Courier New', monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; background: var(--shell); color: var(--ink); overflow: hidden; }
+body { font: 400 16px/1.45 var(--f-body); -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--flash); outline-offset: 3px; }
+
+#stage { position: fixed; inset: 0; background: #0b0f18; overflow: hidden; }
+#video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #0b0f18; }
+#video.mirror { transform: scaleX(-1); }
+.thirds {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(to right, transparent calc(33.333% - .5px), rgba(255,255,255,.22) calc(33.333% - .5px), rgba(255,255,255,.22) calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), rgba(255,255,255,.22) calc(66.666% - .5px), rgba(255,255,255,.22) calc(66.666% + .5px), transparent calc(66.666% + .5px)),
+    linear-gradient(to bottom, transparent calc(33.333% - .5px), rgba(255,255,255,.22) calc(33.333% - .5px), rgba(255,255,255,.22) calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), rgba(255,255,255,.22) calc(66.666% - .5px), rgba(255,255,255,.22) calc(66.666% + .5px), transparent calc(66.666% + .5px));
+}
+#sq {
+  position: absolute; left: 14%; top: 20%; width: 72%; height: 54%;
+  box-shadow: 0 0 0 200vmax rgba(10,16,28,.42);
+  outline: 1px solid rgba(255,228,94,.5);
+  pointer-events: none;
+}
+#sq i { position: absolute; width: 26px; height: 26px; border: 0 solid var(--flash); }
+#sq .tl { top: -2px; left: -2px; border-top-width: 4px; border-left-width: 4px; }
+#sq .tr { top: -2px; right: -2px; border-top-width: 4px; border-right-width: 4px; }
+#sq .bl { bottom: -2px; left: -2px; border-bottom-width: 4px; border-left-width: 4px; }
+#sq .br { bottom: -2px; right: -2px; border-bottom-width: 4px; border-right-width: 4px; }
+#sq .tag {
+  position: absolute; top: 10px; left: 12px;
+  font: 1.2rem/1 var(--f-lcd); color: var(--flash); letter-spacing: .04em;
+  background: rgba(10,16,28,.65); padding: 3px 6px 2px;
+}
+.locked #sq i { border-color: var(--ok); }
+.locked #sq { outline-color: rgba(139,224,164,.7); }
+.locked #sq .tag { color: var(--ok); }
+.target {
+  position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px 0 0 -19px;
+  border: 2px solid rgba(255,255,255,.85); border-radius: 50%; pointer-events: none;
+}
+.target::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #fff; }
+
+.hud-top {
+  position: absolute; left: 0; right: 0; top: 0; display: grid; gap: 10px; pointer-events: none;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px 0; max-width: 560px; margin-inline: auto;
+}
+.brand { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.brand h1 { margin: 0; font: 400 1.05rem/1 var(--f-display); text-transform: uppercase; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+.status { font: 700 .68rem var(--f-body); letter-spacing: .1em; text-transform: uppercase; background: var(--glass); padding: 5px 9px; border-radius: 4px; }
+.card { display: flex; align-items: center; gap: 12px; background: var(--glass); border-radius: 10px; padding: 10px 12px; }
+.arrow { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--flash); color: var(--flash-ink); display: grid; place-items: center; }
+.arrow svg { width: 26px; height: 26px; }
+.card .txt { min-width: 0; flex: 1; }
+.card h2 { margin: 0; font: 400 1rem/1.2 var(--f-display); }
+.card p { margin: .2rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.3; }
+.score { text-align: center; }
+.score b { display: block; font: 400 2.5rem/1 var(--f-lcd); color: var(--stamp); }
+.score span { font: 600 .55rem var(--f-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+.hud-bottom {
+  position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 14px;
+  padding: 0 14px calc(env(safe-area-inset-bottom, 0px) + 16px); max-width: 560px; margin-inline: auto;
+}
+.chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 7px; background: var(--glass); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: .82rem; }
+.chip em { font-style: normal; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.chip::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--ink)); }
+.ok { --c: var(--ok); } .warn { --c: var(--warn); } .bad { --c: var(--bad); }
+.controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.pose { justify-self: start; display: grid; gap: 2px; }
+.pose .n { font: 2.2rem/1 var(--f-lcd); color: var(--stamp); text-shadow: 0 0 6px rgba(255,138,31,.5); }
+.pose .d { font: 1.1rem/1 var(--f-lcd); color: var(--stamp); opacity: .85; }
+.rewind { background: var(--glass); border: 0; border-radius: 6px; padding: 5px 9px; font-size: .75rem; font-weight: 700; }
+.shutter {
+  width: 78px; height: 78px; border-radius: 50%; border: 0; background: var(--flash);
+  box-shadow: 0 0 0 5px rgba(26,36,56,.85), 0 0 0 8px var(--flash-edge);
+}
+.shutter:active { transform: scale(.94); }
+.flip { justify-self: end; width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--glass); display: grid; place-items: center; }
+.flip svg { width: 26px; height: 26px; }
+
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .35s; }
+#flash.on { opacity: .85; transition: none; }
+
+#start {
+  position: fixed; inset: 0; z-index: 5; background: var(--shell); display: grid; place-content: center; gap: 18px;
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) 24px calc(env(safe-area-inset-bottom, 0px) + 24px); text-align: left;
+}
+#start .in { max-width: 420px; display: grid; gap: 16px; }
+#start h1 { margin: 0; font: 400 2.6rem/1 var(--f-display); text-transform: uppercase; }
+#start p { margin: 0; color: var(--muted); }
+.go {
+  min-height: 54px; padding: 12px 20px; background: var(--flash); color: var(--flash-ink); border: 1px solid var(--flash-edge);
+  border-radius: 8px; box-shadow: 0 4px 0 var(--flash-edge); font: 400 1.05rem/1 var(--f-display); text-transform: uppercase;
+}
+.go:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--flash-edge); }
+#err { color: var(--bad); font-weight: 600; }
+.small { font-size: .82rem; }
+
+#sheet { position: fixed; inset: 0; z-index: 6; background: rgba(10,16,28,.94); display: grid; grid-template-rows: 1fr auto; gap: 14px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px); }
+#sheet .pv { min-height: 0; display: grid; place-items: center; }
+#sheet img { max-width: 100%; max-height: 100%; border-radius: 6px; outline: 2px solid var(--line); }
+#sheet .bar { display: grid; gap: 10px; max-width: 460px; width: 100%; margin-inline: auto; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.seg button, .act { min-height: 46px; background: var(--shell-2); border: 1px solid var(--line); border-radius: 8px; font-weight: 700; padding: 8px 12px; text-align: center; text-decoration: none; display: grid; place-items: center; color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--flash); color: var(--flash-ink); border-color: var(--flash-edge); }
+.acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.acts .main { background: var(--flash); color: var(--flash-ink); border-color: var(--flash-edge); }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <video id="video" playsinline muted autoplay></video>
+  <div class="thirds"></div>
+  <div id="sq"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i><span class="tag" id="tag">CADRE ICI</span></div>
+  <div class="target" aria-hidden="true"></div>
+  <div id="flash"></div>
+
+  <div class="hud-top">
+    <div class="brand"><h1>Bon Cadre</h1><span class="status" id="status">IA en attente</span></div>
+    <div class="card" aria-live="polite">
+      <div class="arrow" aria-hidden="true">
+        <svg id="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
+        <svg id="okIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </div>
+      <div class="txt"><h2 id="title">Je cherche ton sujet…</h2><p id="sub">Pointe l'appareil vers ce que tu veux photographier.</p></div>
+      <div class="score"><b id="score">000</b><span>Note</span></div>
+    </div>
+  </div>
+
+  <div class="hud-bottom">
+    <div class="chips" aria-label="Mesures">
+      <span class="chip" id="cCad"></span>
+      <span class="chip" id="cLum"></span>
+      <span class="chip" id="cNet"></span>
+    </div>
+    <div class="controls">
+      <div class="pose">
+        <span class="n" id="left" aria-label="Poses restantes">27</span>
+        <span class="d" id="date"></span>
+        <button class="rewind" id="rewind" type="button" hidden>Rembobiner</button>
+      </div>
+      <button class="shutter" id="shutter" type="button" aria-label="Déclencher"></button>
+      <button class="flip" id="flip" type="button" aria-label="Changer de caméra">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3l-2-2H9L7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"/><path d="M9.5 12.5a2.7 2.7 0 0 1 4.6-1.6M14.5 12.5a2.7 2.7 0 0 1-4.6 1.6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="start">
+  <div class="in">
+    <h1>Bon<br>Cadre</h1>
+    <p>Ouvre la caméra. Un carré jaune te montre où viser, et une IA repère les personnes, les animaux et les objets pour placer le cadre au bon endroit.</p>
+    <button class="go" id="btnStart" type="button">Ouvrir la caméra</button>
+    <p id="err" role="alert"></p>
+    <p class="small">Tout se passe dans ton navigateur. Les images ne sont envoyées nulle part. Le modèle d'IA (environ 5 Mo) se télécharge à la première ouverture.</p>
+  </div>
+</div>
+
+<div id="sheet" hidden>
+  <div class="pv"><img id="shot" alt="Photo prise"></div>
+  <div class="bar">
+    <div class="seg">
+      <button type="button" id="segFull" aria-pressed="true">Photo entière</button>
+      <button type="button" id="segSq" aria-pressed="false">Carré conseillé</button>
+    </div>
+    <div class="acts">
+      <a class="act main" id="save" download="bon-cadre.jpg">Enregistrer</a>
+      <button class="act" id="share" type="button" hidden>Partager</button>
+      <button class="act" id="close" type="button">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var video = $('video'), stage = $('stage'), sq = $('sq');
+  var FR = {
+    person: 'Personne', cat: 'Chat', dog: 'Chien', bird: 'Oiseau', horse: 'Cheval', bicycle: 'Vélo',
+    car: 'Voiture', motorcycle: 'Moto', bus: 'Bus', boat: 'Bateau', bench: 'Banc', cup: 'Tasse',
+    bottle: 'Bouteille', pizza: 'Pizza', cake: 'Gâteau', sandwich: 'Sandwich', donut: 'Donut',
+    banana: 'Banane', apple: 'Pomme', orange: 'Orange', 'potted plant': 'Plante', chair: 'Chaise',
+    couch: 'Canapé', tv: 'Écran', laptop: 'Ordinateur', book: 'Livre', vase: 'Vase', clock: 'Horloge',
+    umbrella: 'Parapluie', backpack: 'Sac à dos', handbag: 'Sac', kite: 'Cerf-volant', teddybear: 'Peluche',
+    'teddy bear': 'Peluche', 'wine glass': 'Verre', bowl: 'Bol', skateboard: 'Skate', surfboard: 'Surf'
+  };
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var stream = null, facing = 'environment', mirror = false, running = false, timer = null, rafOn = false;
+  var model = null, loadStarted = false;
+  var det = null;
+  var cur = { x: .14, y: .2, w: .72, h: .54 }, tgt = { x: .14, y: .2, w: .72, h: .54 };
+  var left = 27, wasLocked = false, lastTitle = '';
+  var an = document.createElement('canvas'), an2 = document.createElement('canvas');
+  var photoCanvas = null, squareCanvas = null, shotURL = null, mode = 'full';
+
+  (function () {
+    var d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
+    $('date').textContent = "'" + String(d.getFullYear()).slice(2) + ' ' + p(d.getMonth() + 1) + ' ' + p(d.getDate());
+  })();
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function setText(el, t) { if (el.textContent !== t) el.textContent = t; }
+  function setLeft(n) { left = n; setText($('left'), String(n).padStart(2, '0')); $('rewind').hidden = n > 0; }
+  function setChip(id, cls, name, label) {
+    var el = $(id); var html = '<em>' + name + '</em>' + label;
+    if (el.dataset.k !== cls + label) { el.className = 'chip ' + cls; el.innerHTML = html; el.dataset.k = cls + label; }
+  }
+
+  function dims() { return { W: stage.clientWidth, H: stage.clientHeight }; }
+  function cropFor() {
+    var vw = video.videoWidth, vh = video.videoHeight, d = dims(), r = d.W / d.H, sx, sy, sw, sh;
+    if (vw / vh > r) { sh = vh; sw = vh * r; sx = (vw - sw) / 2; sy = 0; }
+    else { sw = vw; sh = vw / r; sx = 0; sy = (vh - sh) / 2; }
+    return { sx: sx, sy: sy, sw: sw, sh: sh, vw: vw, vh: vh };
+  }
+  function sidePx() { var d = dims(); return 0.74 * Math.min(d.W, d.H); }
+
+  /* ---------- Caméra ---------- */
+  function showErr(t) { $('err').textContent = t; $('start').hidden = false; }
+
+  function stopStream() {
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+  }
+
+  function openCamera() {
+    $('err').textContent = '';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showErr('Cette page n\'a pas accès à la caméra. Ouvre Bon Cadre depuis une adresse en https.');
+      return;
+    }
+    stopStream();
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false
+    }).then(function (s) {
+      stream = s;
+      var st = s.getVideoTracks()[0].getSettings ? s.getVideoTracks()[0].getSettings() : {};
+      mirror = st.facingMode ? st.facingMode === 'user' : facing === 'user';
+      video.classList.toggle('mirror', mirror);
+      video.srcObject = s;
+      return video.play();
+    }).then(function () {
+      $('start').hidden = true;
+      running = true;
+      if (!timer) timer = setInterval(analyzeFrame, 300);
+      if (!rafOn) { rafOn = true; requestAnimationFrame(tick); }
+      loadModel();
+    }).catch(function (e) {
+      var n = e && e.name;
+      if (n === 'NotAllowedError' || n === 'SecurityError') showErr('Accès à la caméra refusé. Autorise-la dans les réglages du navigateur, puis recharge la page.');
+      else if (n === 'NotFoundError' || n === 'OverconstrainedError') showErr('Aucune caméra trouvée sur cet appareil.');
+      else showErr('La caméra ne démarre pas. Ferme les autres applis qui l\'utilisent et réessaie.');
+    });
+  }
+
+  /* ---------- IA : COCO-SSD chargé à la demande ---------- */
+  function loadScript(src) {
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = function () { rej(new Error('load ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function loadModel() {
+    if (loadStarted) return;
+    loadStarted = true;
+    setText($('status'), 'Chargement de l\'IA…');
+    loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js')
+      .then(function () { return loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js'); })
+      .then(function () { return window.cocoSsd.load({ base: 'lite_mobilenet_v2' }); })
+      .then(function (m) { model = m; setText($('status'), 'IA prête'); detectLoop(); })
+      .catch(function () { setText($('status'), 'Mode simple'); });
+  }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function detectLoop() {
+    (async function () {
+      while (true) {
+        if (running && model && video.readyState >= 2) {
+          try { pick(await model.detect(video, 8)); } catch (e) { /* image suivante */ }
+        }
+        await sleep(120);
+      }
+    })();
+  }
+  function pick(preds) {
+    var vw = video.videoWidth, vh = video.videoHeight, best = null, bw = 0, i, p, wt;
+    for (i = 0; i < preds.length; i++) {
+      p = preds[i];
+      if (p.score < 0.5) continue;
+      wt = (p.bbox[2] * p.bbox[3]) / (vw * vh) * p.score * (p.class === 'person' ? 1.6 : 1);
+      if (wt > bw) { bw = wt; best = p; }
+    }
+    if (best && bw > 0.004) {
+      det = { cls: best.class, label: FR[best.class] || 'Sujet', bbox: best.bbox, t: performance.now() };
+    }
+  }
+
+  /* ---------- Analyse image (saliency, lumière, netteté) ---------- */
+  function blur(a, w, h, r) {
+    var t = new Float32Array(a.length), o = new Float32Array(a.length), x, y, k, s, c;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      s = 0; c = 0;
+      for (k = -r; k <= r; k++) if (x + k >= 0 && x + k < w) { s += a[y * w + x + k]; c++; }
+      t[y * w + x] = s / c;
+    }
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      s = 0; c = 0;
+      for (k = -r; k <= r; k++) if (y + k >= 0 && y + k < h) { s += t[(y + k) * w + x]; c++; }
+      o[y * w + x] = s / c;
+    }
+    return o;
+  }
+
+  function drawView(cv, w, h, crop) {
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    var cx = cv.getContext('2d', { willReadFrequently: true });
+    cx.save();
+    if (mirror) { cx.translate(w, 0); cx.scale(-1, 1); }
+    cx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, w, h);
+    cx.restore();
+    return cx.getImageData(0, 0, w, h).data;
+  }
+
+  function measure(crop, d) {
+    var AW = 96, AH = Math.max(40, Math.round(AW * d.H / d.W)), n = AW * AH, i, x, y;
+    var data = drawView(an, AW, AH, crop);
+    var R = new Float32Array(n), G = new Float32Array(n), B = new Float32Array(n), gray = new Float32Array(n);
+    var mr = 0, mg = 0, mb = 0;
+    for (i = 0; i < n; i++) {
+      R[i] = data[i * 4]; G[i] = data[i * 4 + 1]; B[i] = data[i * 4 + 2];
+      gray[i] = 0.299 * R[i] + 0.587 * G[i] + 0.114 * B[i];
+      mr += R[i]; mg += G[i]; mb += B[i];
+    }
+    mr /= n; mg /= n; mb /= n;
+    var grad = new Float32Array(n), cd = new Float32Array(n), gmax = 1e-6, cmax = 1e-6;
+    for (y = 1; y < AH - 1; y++) for (x = 1; x < AW - 1; x++) {
+      i = y * AW + x;
+      var gx = gray[i + 1] - gray[i - 1], gy = gray[i + AW] - gray[i - AW];
+      grad[i] = Math.sqrt(gx * gx + gy * gy);
+      if (grad[i] > gmax) gmax = grad[i];
+    }
+    for (i = 0; i < n; i++) {
+      var dr = R[i] - mr, dg = G[i] - mg, db = B[i] - mb;
+      cd[i] = Math.sqrt(dr * dr + dg * dg + db * db);
+      if (cd[i] > cmax) cmax = cd[i];
+    }
+    var sal = new Float32Array(n);
+    for (i = 0; i < n; i++) sal[i] = 0.55 * grad[i] / gmax + 0.45 * cd[i] / cmax;
+    sal = blur(blur(sal, AW, AH, 4), AW, AH, 4);
+    var total = 0;
+    for (i = 0; i < n; i++) { sal[i] = sal[i] * sal[i]; total += sal[i]; }
+    var S = AW + 1, I = new Float64Array(S * (AH + 1));
+    for (y = 0; y < AH; y++) {
+      var row = 0;
+      for (x = 0; x < AW; x++) { row += sal[y * AW + x]; I[(y + 1) * S + x + 1] = I[y * S + x + 1] + row; }
+    }
+    function best(s) {
+      var b = -1, bx = 0, by = 0, v;
+      for (y = 0; y <= AH - s; y += 2) for (x = 0; x <= AW - s; x += 2) {
+        v = I[(y + s) * S + x + s] - I[y * S + x + s] - I[(y + s) * S + x] + I[y * S + x];
+        if (v > b) { b = v; bx = x; by = y; }
+      }
+      if (total < 1e-6) { bx = Math.round((AW - s) / 2); by = Math.round((AH - s) / 2); b = 0; }
+      return { v: b, x: bx, y: by, s: s };
+    }
+    var sBig = Math.round(0.74 * Math.min(AW, AH)), sSmall = Math.round(0.5 * Math.min(AW, AH));
+    var big = best(sBig), small = best(sSmall), tot = total || 1;
+
+    var sIn = 0, cIn = 0, sOut = 0, cOut = 0;
+    for (y = 0; y < AH; y++) for (x = 0; x < AW; x++) {
+      if (x >= big.x && x < big.x + big.s && y >= big.y && y < big.y + big.s) { sIn += gray[y * AW + x]; cIn++; }
+      else { sOut += gray[y * AW + x]; cOut++; }
+    }
+    var Lin = sIn / (cIn || 1), Lout = cOut ? sOut / cOut : Lin;
+
+    var BW = 192, BH = Math.max(80, Math.round(BW * d.H / d.W));
+    var d2 = drawView(an2, BW, BH, crop), g2 = new Float32Array(BW * BH);
+    for (i = 0; i < BW * BH; i++) g2[i] = 0.299 * d2[i * 4] + 0.587 * d2[i * 4 + 1] + 0.114 * d2[i * 4 + 2];
+    var f = BW / AW;
+    var x0 = Math.max(1, Math.round(big.x * f)), y0 = Math.max(1, Math.round(big.y * f));
+    var x1 = Math.min(BW - 1, Math.round((big.x + big.s) * f)), y1 = Math.min(BH - 1, Math.round((big.y + big.s) * f));
+    var ls = 0, ls2 = 0, lc = 0, lap;
+    for (y = y0; y < y1; y++) for (x = x0; x < x1; x++) {
+      var q = y * BW + x;
+      lap = 4 * g2[q] - g2[q - 1] - g2[q + 1] - g2[q - BW] - g2[q + BW];
+      ls += lap; ls2 += lap * lap; lc++;
+    }
+    return {
+      AW: AW, AH: AH, big: big,
+      fracBig: big.v / tot, fracSmall: small.v / tot,
+      Lall: (sIn + sOut) / n, Lin: Lin, Lout: Lout,
+      lap: lc ? ls2 / lc - Math.pow(ls / lc, 2) : 0
+    };
+  }
+
+  /* ---------- Décision à chaque analyse ---------- */
+  function analyzeFrame() {
+    if (!running || video.readyState < 2 || !video.videoWidth) return;
+    var d = dims(), crop = cropFor(), m = measure(crop, d), px = sidePx();
+    var fresh = det && performance.now() - det.t < 1200;
+    var cx, cy, label, dist = null, busy = false;
+
+    if (fresh) {
+      var b = det.bbox;
+      cx = (b[0] + b[2] / 2 - crop.sx) / crop.sw;
+      cy = ((det.cls === 'person' ? b[1] + 0.38 * b[3] : b[1] + b[3] / 2) - crop.sy) / crop.sh;
+      if (mirror) cx = 1 - cx;
+      var bwn = b[2] / crop.sw, bhn = b[3] / crop.sh;
+      var metric = det.cls === 'person' ? bhn : Math.max(bwn * d.W, bhn * d.H) / px;
+      if (metric < 0.3) dist = 'far'; else if (metric > 0.98) dist = 'close';
+      label = det.label;
+    } else {
+      cx = (m.big.x + m.big.s / 2) / m.AW; cy = (m.big.y + m.big.s / 2) / m.AH;
+      busy = m.fracBig < 0.5;
+      if (!busy && m.fracBig > 0.6 && m.fracSmall / m.fracBig > 0.85) dist = 'far';
+      label = '';
+    }
+
+    var sw = px / d.W, sh = px / d.H;
+    tgt.w = sw; tgt.h = sh;
+    tgt.x = clamp(cx - sw / 2, 0, 1 - sw);
+    tgt.y = clamp(cy - sh / 2, 0, 1 - sh);
+
+    var dx = cx - 0.5, dy = cy - 0.5, T = 0.07, parts = [];
+    if (dx < -T) parts.push('plus à gauche'); else if (dx > T) parts.push('plus à droite');
+    if (dy < -T) parts.push('plus haut'); else if (dy > T) parts.push('plus bas');
+    var centered = parts.length === 0, dd = Math.hypot(dx, dy);
+
+    var lum, lumTitle = '', lumSub = '';
+    if (m.Lall < 55) { lum = 'bad'; lumTitle = 'Trop sombre'; lumSub = 'Cherche une fenêtre ou un lampadaire, et évite le zoom.'; }
+    else if (m.Lin < 85 && m.Lout - m.Lin > 45) { lum = 'warn'; lumTitle = 'Contre-jour'; lumSub = 'Mets la lumière dans ton dos, ou touche le sujet à l\'écran.'; }
+    else if (m.Lall > 215) { lum = 'warn'; lumTitle = 'Trop clair'; lumSub = 'Écarte-toi du soleil direct ou baisse l\'exposition.'; }
+    else lum = 'ok';
+
+    var net = m.lap > 60 ? 'ok' : m.lap > 25 ? 'warn' : 'bad';
+
+    var cad = dist === 'far' ? ['warn', 'Sujet petit'] : dist === 'close' ? ['warn', 'Trop près'] : busy ? ['warn', 'Trop chargé']
+      : dd >= 0.2 ? ['bad', 'Décalé'] : dd >= 0.08 ? ['warn', 'Presque'] : ['ok', 'Bien placé'];
+    setChip('cCad', cad[0], 'Cadrage', cad[1]);
+    setChip('cLum', lum, 'Lumière', lum === 'ok' ? 'Bonne' : lumTitle);
+    setChip('cNet', net, 'Netteté', net === 'ok' ? 'Net' : net === 'warn' ? 'Un peu mou' : 'Flou');
+
+    var title, sub, showArrow = false, locked = false;
+    if (!centered) {
+      title = 'Vise ' + parts.join(' et ');
+      sub = (label ? label + ' repéré(e). ' : '') + 'Amène le carré jaune sur le rond blanc.';
+      showArrow = true;
+    } else if (dist === 'far') { title = 'Avance de deux pas'; sub = 'Ton sujet est petit. Marcher vaut mieux que zoomer.'; }
+    else if (dist === 'close') { title = 'Recule un peu'; sub = 'Le sujet déborde du cadre.'; }
+    else if (busy) { title = 'Un seul sujet'; sub = 'Il y a trop de détails. Choisis ce qui compte.'; }
+    else if (lum !== 'ok') { title = lumTitle; sub = lumSub; }
+    else if (net !== 'ok') { title = 'Stabilise-toi'; sub = 'Coude collé au corps, souffle, touche l\'écran pour la mise au point.'; }
+    else { title = 'Déclenche !'; sub = 'Cadre, lumière et netteté sont bons.'; locked = true; }
+
+    $('arrow').parentNode.hidden = false;
+    $('arrow').hidden = !showArrow;
+    $('okIcon').hidden = showArrow;
+    if (showArrow) $('arrow').style.transform = 'rotate(' + (Math.atan2(dy, dx) * 180 / Math.PI) + 'deg)';
+    setText($('title'), title); setText($('sub'), sub);
+
+    stage.classList.toggle('locked', locked);
+    setText($('tag'), locked ? 'PARFAIT' : (label ? label.toUpperCase() : 'CADRE ICI'));
+    if (locked && !wasLocked && navigator.vibrate) { try { navigator.vibrate(25); } catch (e) { /* ignoré */ } }
+    wasLocked = locked;
+
+    var pen = Math.min(55, dd * 130);
+    if (dist) pen += 8; if (busy) pen += 10;
+    if (lum !== 'ok') pen += 12;
+    pen += net === 'bad' ? 16 : net === 'warn' ? 8 : 0;
+    setText($('score'), String(Math.max(5, Math.round(100 - pen))).padStart(3, '0'));
+  }
+
+  /* Le carré glisse vers sa cible à chaque image */
+  function tick() {
+    var k = reduce ? 1 : 0.22;
+    cur.x += (tgt.x - cur.x) * k; cur.y += (tgt.y - cur.y) * k;
+    cur.w += (tgt.w - cur.w) * k; cur.h += (tgt.h - cur.h) * k;
+    sq.style.left = (cur.x * 100) + '%'; sq.style.top = (cur.y * 100) + '%';
+    sq.style.width = (cur.w * 100) + '%'; sq.style.height = (cur.h * 100) + '%';
+    requestAnimationFrame(tick);
+  }
+
+  /* ---------- Déclencheur ---------- */
+  function snap() {
+    if (!running || !video.videoWidth) return;
+    var crop = cropFor(), W = Math.round(crop.sw), H = Math.round(crop.sh);
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d');
+    x.save();
+    if (mirror) { x.translate(W, 0); x.scale(-1, 1); }
+    x.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
+    x.restore();
+    var S = Math.round(cur.w * W), c2 = document.createElement('canvas'); c2.width = S; c2.height = S;
+    c2.getContext('2d').drawImage(c, cur.x * W, cur.y * H, cur.w * W, cur.h * H, 0, 0, S, S);
+    photoCanvas = c; squareCanvas = c2;
+
+    var fl = $('flash'); fl.classList.add('on');
+    setTimeout(function () { fl.classList.remove('on'); }, 60);
+    if (navigator.vibrate) { try { navigator.vibrate(40); } catch (e) { /* ignoré */ } }
+    if (left > 0) setLeft(left - 1);
+    mode = 'full';
+    showSheet();
+  }
+
+  function showSheet() {
+    var cv = mode === 'full' ? photoCanvas : squareCanvas;
+    $('segFull').setAttribute('aria-pressed', mode === 'full');
+    $('segSq').setAttribute('aria-pressed', mode === 'sq');
+    cv.toBlob(function (blob) {
+      if (!blob) return;
+      if (shotURL) URL.revokeObjectURL(shotURL);
+      shotURL = URL.createObjectURL(blob);
+      var d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
+      var name = 'bon-cadre-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()) + (mode === 'sq' ? '-carre' : '') + '.jpg';
+      $('shot').src = shotURL;
+      $('save').href = shotURL; $('save').download = name;
+      var file = new File([blob], name, { type: 'image/jpeg' });
+      var canShare = navigator.canShare && navigator.canShare({ files: [file] });
+      $('share').hidden = !canShare;
+      $('share').onclick = function () { navigator.share({ files: [file], title: 'Bon Cadre' }).catch(function () { /* annulé */ }); };
+      $('sheet').hidden = false;
+    }, 'image/jpeg', 0.92);
+  }
+
+  $('btnStart').addEventListener('click', openCamera);
+  $('shutter').addEventListener('click', snap);
+  $('flip').addEventListener('click', function () { facing = facing === 'user' ? 'environment' : 'user'; det = null; openCamera(); });
+  $('rewind').addEventListener('click', function () { setLeft(27); });
+  $('close').addEventListener('click', function () { $('sheet').hidden = true; });
+  $('segFull').addEventListener('click', function () { mode = 'full'; showSheet(); });
+  $('segSq').addEventListener('click', function () { mode = 'sq'; showSheet(); });
+  document.addEventListener('visibilitychange', function () { running = !document.hidden && !!stream; });
+})();
+</script>
+</body>
+</html>
